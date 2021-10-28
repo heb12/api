@@ -15,7 +15,7 @@ https://api.heb12.com/search?words=for%20god%20so%20loved%20the%20world
 # Bible Get
 Get Bible references, currently under [construction](https://code.theres.life/heb12/cbibleget).  
 | Parameter | Description |
-| ----- | ----- |
+| --------- | ----------- |
 | reference | Accepts a reference parsable by fbrp. |
 
 It returns a large JSON structure, which fairly easy to parse.

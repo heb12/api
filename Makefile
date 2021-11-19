@@ -1,3 +1,6 @@
+# Run this as the user you want to run the API on.
+# Tested on Debian
+
 # Web server home directory
 WWW=/var/www/api
 
@@ -10,6 +13,18 @@ TRANSLATION=web
 # location ~ /\. {
 # deny all;
 # }
+
+all: confirm packages pull setup_biblesearch setup_cbiblesearch git_translations add_biblec
+
+confirm:
+	echo "Will perform the following:"
+	echo "Install NodeJS, Go, GCC, Python3 and Pip3"
+	echo "Pull bibleget, cbibleget, bsearchpyjs, and biblec into $(shell printf ~)"
+	echo "Install systemd services 'biblesearch' and 'cbibleget'"
+	echo "Pull 2.3GB of Bible data into $(WWW)/translations"
+	echo ""
+	echo "Ctrl+C to cancel, or press any key to begin."
+	read
 
 packages:
 	sudo apt install nodejs go gcc python3 python3-pip
@@ -68,9 +83,8 @@ add_biblec:
 	cd biblec; node compiler.js $(WWW)/translations/json/en/$(TRANSLATION).json i $(DIR)
 	-cp $(DIR)/$(TRANSLATION).* $(WWW)/translations/biblec
 
-reset:
-	rm -rf $(WWW)/translations
-	rm -rf bibleget cbibleget biblesearch
-
-nginx_check:
-	echo 
+remove:
+	cd; rm -rf $(WWW)/translations
+	cd; rm -rf bibleget cbibleget biblesearch
+	rm -rf /etc/systemd/system/cbibleget*
+	rm -rf /etc/systemd/system/biblesearch*

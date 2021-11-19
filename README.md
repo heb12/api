@@ -1,10 +1,21 @@
 # api
 Heb12 API Setup Script
 
-This is a draft of random scripts that will  
-be put together one day.  
+# Setup
+Will consume around 5 gigabytes. Most is for hosting Bible data,  
+the rest is for packages (which you probably have anyway).  
 
-Apache2 configuration:
+Pull the repository, and run "make". Should be fairly straightforward.  
+```
+make
+```
+
+# Removal
+```
+make remove
+```
+
+## Apache2 Configuration
 ```
 DocumentRoot /var/www/api
 ServerName api.heb12.com
@@ -16,25 +27,22 @@ ServerName api.heb12.com
 <Location /get>
 	ProxyPass http://localhost:5500/get/
 </Location>
-
-<Location /getl>
-	ProxyPass http://api.heb12.com/get.php
-</Location>
-
-<Location /download>
-	ProxyPass http://api.heb12.com/download.php
-</Location>
 ```
 
+## Nginx configuration
 ```
-mkdir translations
-cd translations
-git clone https://github.com/heb12/gratis.json json
-```
+server_name api.heb12.com;
 
-```
-git clone code.heb12.com/heb12/biblesearch --recurse-submodules
-git clone code.heb12.com/heb12/bibleget --recurse-submodules
-```
+autoindex on;
 
-That's it, I'm too lazy to do anything else.
+root /var/www/api;
+index index.html index.php;
+
+location /search {
+	proxy_pass http://localhost:1235/;
+}
+
+location /get {
+	proxy_pass http://localhost:1234/;
+}
+```

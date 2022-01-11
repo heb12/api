@@ -88,3 +88,5 @@ remove:
 	cd; rm -rf bibleget cbibleget biblesearch
 	rm -rf /etc/systemd/system/cbibleget*
 	rm -rf /etc/systemd/system/biblesearch*
+
+.PHONY: remove add_biblec git_translations setup_cbibleget setup_biblesearch pull packages confirm

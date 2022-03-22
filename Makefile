@@ -6,6 +6,9 @@ WWW=/var/www/api
 
 # Heb12 config dir
 DIR=/home/$(USER)/.local/share/heb12/
+HOME=/home/$(USER)
+
+SYSTEMD=/etc/systemd/system
 
 # Default translation
 TRANSLATION=web
@@ -14,32 +17,37 @@ TRANSLATION=web
 # deny all;
 # }
 
-all: confirm packages pull setup_biblesearch setup_cbiblesearch git_translations add_biblec
+install: confirm packages pull setup_biblesearch setup_cbiblesearch git_translations add_biblec
 
 confirm:
-	echo "Will perform the following:"
-	echo "Install NodeJS, Go, GCC, Python3 and Pip3"
-	echo "Pull bibleget, cbibleget, bsearchpyjs, and biblec into $(shell printf ~)"
-	echo "Install systemd services 'biblesearch' and 'cbibleget'"
-	echo "Pull 2.3GB of Bible data into $(WWW)/translations"
-	echo ""
-	echo "Ctrl+C to cancel, or press any key to begin."
-	read
+	@echo "Will perform the following:"
+	@echo "Install NodeJS, Go, GCC, Python3 and Pip3"
+	@echo "Pull bibleget, cbibleget, bsearchpyjs, and biblec into $(shell printf ~)"
+	@echo "Install systemd services 'biblesearch' and 'cbibleget'"
+	@echo "Pull 2.3GB of Bible data into $(WWW)/translations"
+	@echo ""
+	@echo "Ctrl+C to cancel, or press any key to begin."
+	@read
 
 packages:
 	sudo apt install nodejs go gcc python3 python3-pip
 	pip3 install flask waitress
 
-pull:
+pull: $(HOME)/bibleget $(HOME)/cbibleget $(HOME)/bsearchpyjs $(HOME)/biblec
+$(HOME)/bibleget:
 	git clone https://code.theres.life/heb12/bibleget --recurse-submodules
+$(HOME)/cbibleget:
 	git clone https://code.theres.life/heb12/cbibleget --recurse-submodules
+$(HOME)/bsearchpyjs:
 	git clone https://code.theres.life/heb12/bsearchpyjs --recurse-submodules
+$(HOME)/biblec:
 	git clone https://code.theres.life/heb12/biblec --recurse-submodules
 
-setup_biblesearch:
-	-cd bsearchpyjs; mkdir data; mkdir data/$(TRANSLATION)
+setup_biblesearch: $(SYSTEMD)/biblesearch.service $(HOME)/bsearchpyjs
+	-cd bsearchpyjs; mkdir -p data/$(TRANSLATION)
 	cd bsearchpyjs; node compile.js $(WWW)/translations/json/en/$(TRANSLATION).json data/$(TRANSLATION)
-	sudo sh -c 'echo "[Unit]\n\
+$(SYSTEMD)/biblesearch.service:
+	sudo echo "[Unit]\n\
 	Description=biblesearch service\n\
 	After=network.target\n\
 	StartLimitIntervalSec=0\n\
@@ -49,13 +57,14 @@ setup_biblesearch:
 	Restart=always\n\
 	RestartSec=1\n\
 	User=$(USER)\n\
-	ExecStart=/usr/bin/python3 /home/$(USER)/bsearchpyjs/server.py /home/$(USER)/bsearchpyjs/data/web\n\
+	ExecStart=/usr/bin/python3 $(HOME)/bsearchpyjs/server.py $(HOME)/bsearchpyjs/data/web\n\
 	\n\
 	[Install]\n\
-	WantedBy=multi-user.target\n" > /etc/systemd/system/biblesearch.service'
+	WantedBy=multi-user.target\n" > $(SYSTEMD)/biblesearch.service
 
-setup_cbibleget:
-	sudo sh -c 'echo "[Unit]\n\
+setup_cbibleget: $(SYSTEMD)/cbibleget.service
+$(SYSTEMD)/cbibleget.service:
+	sudo echo "[Unit]\n\
 	Description=cbibleget service\n\
 	After=network.target\n\
 	StartLimitIntervalSec=0\n\
@@ -65,13 +74,13 @@ setup_cbibleget:
 	Restart=always\n\
 	RestartSec=1\n\
 	User=$(USER)\n\
-	ExecStart=sh -c \"cd /home/$(USER)/cbibleget; go run .\"\n\
+	ExecStart=sh -c \"cd $(HOME)/cbibleget; go run .\"\n\
 	\n\
 	[Install]\n\
-	WantedBy=multi-user.target\n" > /etc/systemd/system/cbibleget.service'
+	WantedBy=multi-user.target\n" > $(SYSTEMD)/cbibleget.service
 
 git_translations:
-	mkdir $(WWW)/translations
+	mkdir -p $(WWW)/translations
 	cd $(WWW)/translations; git clone https://github.com/heb12/gratis.json json; rm -rf .git
 	cd $(WWW)/translations; git clone https://github.com/gratis-bible/bible xml; rm -rf .git
 	cd $(WWW)/translations; git clone --branch split https://github.com/gratis-bible/bible split; rm -rf .git
